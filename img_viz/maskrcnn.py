@@ -11,8 +11,8 @@ from img_viz.constants import SliceMode, PlaneTypes
 
 class MaskRCNNVisualizer:
     _disp_images = True
-    _output_folder = 'output'
-    _input_folder = 'input'
+    _output_folder = 'output_medical'
+    _input_folder = 'input_medical'
     _COLORS = ['y', 'r', 'c', 'b', 'g', 'w', 'k', 'y', 'r', 'c', 'b', 'g', 'w', 'k']
 
     _use_flipped_image = True

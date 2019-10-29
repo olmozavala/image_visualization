@@ -12,7 +12,7 @@ from img_viz.constants import SliceMode, PlaneTypes
 
 class MedicalImageVisualizer:
     _disp_images = True
-    _output_folder = 'output'
+    _output_folder = 'output_medical'
     _COLORS = ['y', 'r', 'c', 'b', 'g', 'w', 'k', 'y', 'r', 'c', 'b', 'g', 'w', 'k']
 
     def __init__(self, **kwargs):

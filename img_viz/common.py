@@ -13,8 +13,18 @@ def checkFolder(output_folder):
     if not(os.path.exists(output_folder)):
         os.makedirs(output_folder)
 
+def plot_slice_eoa(c_img, ax, cmap='gray') -> None:
+    """
+    Plots an simple 2D img for EOA data.
+    :param c_img: 2D Image
+    :param ax:
+    :return:
+    """
+    c_ax = ax
+    c_ax.axis('off')
+    c_ax.imshow(c_img, cmap=cmap)
 
-def plot_slice(c_img, ctrs: list, ax, labels) -> None:
+def plot_slice(c_img, ctrs: list, ax, labels, cmap='gray') -> None:
     """
     Plots an image with its contours.
     :param c_img: 2D Image
@@ -27,7 +37,7 @@ def plot_slice(c_img, ctrs: list, ax, labels) -> None:
     label_font_size = 15
     c_ax = ax
     c_ax.axis('off')
-    c_ax.imshow(c_img, cmap='gray')
+    c_ax.imshow(c_img, cmap=cmap)
     if len(ctrs) > 0:
         for idx, c_ctr in enumerate(ctrs):
             cs = c_ax.contour(c_ctr, colors=_COLORS[idx], linewidths=ctr_line_width)

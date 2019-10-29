@@ -22,7 +22,7 @@ def main():
 
 def plot_multiple_cases(input_folder, output_folder, img_names, ctr_names, labels):
     """
-    It simply calls the plot function for every image and case found in the input folder
+    It simply calls the plot function for every image and case found in the input_medical folder
     :param input_folder:
     :param output_folder:
     :param img_names:

@@ -8,8 +8,8 @@ from img_viz.maskrcnn import MaskRCNNVisualizer
 
 def main():
     # ================= Generate Images for MaskRCNN ===============
-    input_folder = join('..','test_data', 'input')
-    output_folder = join('..', 'test_data', 'output')
+    input_folder = join('..','test_data', 'input_medical')
+    output_folder = join('..', 'test_data', 'output_medical')
     viz_maskrcnn_obj = MaskRCNNVisualizer(output_folder=output_folder,
                                           input_folder=input_folder,
                                           disp_images=False)

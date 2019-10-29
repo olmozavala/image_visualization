@@ -6,8 +6,8 @@ from img_viz.viz3d import ImageVisualizer3D
 
 
 def main():
-    input_folder = join('..', 'test_data', 'input', 'Case-0001')
-    output_folder = join('..', 'test_data', 'output')
+    input_folder = join('..', 'test_data', 'input_medical', 'Case-0001')
+    output_folder = join('..', 'test_data', 'output_medical')
     ctr_itk = sitk.ReadImage(join(input_folder, 'ctr_KidneyBilat.nrrd'))
 
     viz_obj = ImageVisualizer3D(output_folder=output_folder, open_browser=False)

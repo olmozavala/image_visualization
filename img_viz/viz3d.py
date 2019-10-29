@@ -9,7 +9,7 @@ import numpy as np
 from skimage import measure
 
 class ImageVisualizer3D:
-    _output_folder = 'output'
+    _output_folder = 'output_medical'
     _open_browser = False
     _COLORS = ['y', 'r', 'c', 'b', 'g', 'w', 'k', 'y', 'r', 'c', 'b', 'g', 'w', 'k']
 
