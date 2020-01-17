@@ -48,7 +48,7 @@ class MedicalImageVisualizer:
         file_name_prefix = config['file_name_prefix']
         labels = config['labels']
 
-        checkFolder(self._output_folder)
+        create_folder(self._output_folder)
         if plane != PlaneTypes.ALL:  # Draw single plane
             # This should plot a single image with all the contours overlayed
             first_img_shape = imgs[0].shape
@@ -154,7 +154,7 @@ class MedicalImageVisualizer:
         """
         other_axes = [[1, 2], [2, 0], [1, 0]]
         shape_str = str(c_img.shape)
-        checkFolder(self._output_folder)
+        create_folder(self._output_folder)
         for id_loc, c_loc in enumerate(locations):
             plt.subplots(1, 3, squeeze=True, figsize=(8 * 3, 8))
             for id_plane, plane in enumerate([PlaneTypes.AXIAL, PlaneTypes.SAGITTAL, PlaneTypes.CORONAL]):

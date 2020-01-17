@@ -14,3 +14,9 @@ class PlaneTypes(Enum):
     SAGITTAL = 'SAG'
     ALL = 'ALL'
 
+class PlotMode(Enum):
+    """ Enum to select the different types of slices"""
+    RASTER=1
+    CONTOUR=2
+    MERGED=3
+

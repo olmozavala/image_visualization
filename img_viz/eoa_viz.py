@@ -3,7 +3,7 @@ from os.path import join
 
 import matplotlib.pyplot as plt
 from img_viz.common import *
-from img_viz.constants import SliceMode, PlaneTypes
+from img_viz.constants import SliceMode, PlaneTypes, PlotMode
 import xarray as xr
 
 import cartopy.crs as ccrs
@@ -13,11 +13,14 @@ import cartopy
 class EOAImageVisualizer:
     """This class makes plenty of plots from netcdf datasets or numpy arrays """
     _disp_images = True
-    _output_folder = 'output_medical'
+    _output_folder = 'output'
     _COLORS = ['y', 'r', 'c', 'b', 'g', 'w', 'k', 'y', 'r', 'c', 'b', 'g', 'w', 'k']
+    _figsize = 15
 
     def __init__(self, **kwargs):
         # All the arguments that are passed to the constructor of the class MUST have its name on it.
+        self.disp_images = True
+        self.output_folder = 'output'
         for arg_name, arg_value in kwargs.items():
             self.__dict__["_" + arg_name] = arg_value
 
@@ -117,10 +120,10 @@ class EOAImageVisualizer:
         lon = ds[lonvar]
         lat = ds[latvar]
 
-        checkFolder(self._output_folder)
+        create_folder(self._output_folder)
         for c_slice in z_levels:
             for c_time in timesteps:
-                plt.subplots(1, len(var_names), squeeze=True, figsize=(8*len(var_names), 8))
+                plt.subplots(1, len(var_names), squeeze=True, figsize=(self._figsize*len(var_names), self._figsize))
                 for idx_var, c_var_name in enumerate(var_names):
                     # Depth selection, not sure if the name is always the same
                     c_depth = ds[z_levelvar].values[c_slice]
@@ -156,10 +159,10 @@ class EOAImageVisualizer:
         lat = ds.variables[latvar][:]
         projection = proj
 
-        checkFolder(self._output_folder)
+        create_folder(self._output_folder)
         for c_slice in z_levels:
             for c_time in timesteps:
-                plt.subplots(1, len(var_names), squeeze=True, figsize=(8*len(var_names), 8))
+                plt.subplots(1, len(var_names), squeeze=True, figsize=(self._figsize*len(var_names), self._figsize))
                 for idx_var, c_var_name in enumerate(var_names):
                     cur_var = ds.variables.get(c_var_name)
                     ax = plt.subplot(1, len(var_names), idx_var+1, projection=projection)
@@ -188,10 +191,10 @@ class EOAImageVisualizer:
         """
         This is the main function to plot multiple z_levels from a NetCDF file (4D data)
         """
-        checkFolder(self._output_folder)
+        create_folder(self._output_folder)
         for c_slice in z_levels:
             for c_time in timesteps:
-                plt.subplots(1, len(var_names), squeeze=True, figsize=(8*len(var_names), 8))
+                plt.subplots(1, len(var_names), squeeze=True, figsize=(self._figsize*len(var_names), self._figsize))
                 for idx_var, c_var_name in enumerate(var_names):
                     cur_var = ds.variables.get(c_var_name)
                     ax = plt.subplot(1, len(var_names), idx_var+1)
@@ -202,10 +205,11 @@ class EOAImageVisualizer:
                 file_name = F'{file_name_prefix}_{c_slice:04d}'
                 pylab.savefig(join(self._output_folder, F'{file_name}.png'), bbox_inches='tight')
                 self._close_figure()
+
     # ====================================== 3D Data =====================================
 
     def plot_3d_data_xarray_map(self, xr_ds, var_names: list, timesteps: list, title='', file_name_prefix='',
-                                proj=ccrs.PlateCarree()):
+                                proj=ccrs.PlateCarree(), timevar_name='time'):
         """
         Plots multiple z_levels from a NetCDF file (3D data). It plots the results in a map.
         It is assuming that the 3rd
@@ -213,9 +217,9 @@ class EOAImageVisualizer:
         """
         projection = proj
 
-        checkFolder(self._output_folder)
+        create_folder(self._output_folder)
         for c_time_idx in timesteps:
-            plt.subplots(1, len(var_names), squeeze=True, figsize=(8*len(var_names), 8))
+            plt.subplots(1, len(var_names), squeeze=True, figsize=(self._figsize*len(var_names), self._figsize))
             for idx_var, c_var_name in enumerate(var_names):
                 print(c_var_name)
                 cur_var = xr_ds[c_var_name]
@@ -223,15 +227,10 @@ class EOAImageVisualizer:
                 cur_coords_names = list(cur_var.coords.keys())
                 # Assuming the order of the dims are time, lat, lon
                 cur_dims_names = list(cur_var.dims)
-                # TODO here the selection of the 'time' coordinate is hardcoded and changes depending
-                # the file. Not sure how to fix it, so it will need to change for every problem. 
-                # timevar = cur_coords_names[2]
-                # Time selection 
-                timevar = cur_coords_names[0] 
-                c_time = xr_ds[timevar].values[c_time_idx]
+                c_time = xr_ds[timevar_name].values[c_time_idx]
                 # Obtains data to the nearest requested time
                 try:
-                    cur_var = xr_ds[c_var_name].sel(**{timevar: c_time}, method='nearest')
+                    cur_var = xr_ds[c_var_name].sel(**{timevar_name: c_time}, method='nearest')
                 except Exception as e:
                     print(F"Warning for {c_var_name}!! (couldn't interpolate to the proper 'time' value: {e}")
                     cur_var = xr_ds[c_var_name].sel(**{cur_dims_names[0]: c_time_idx})
@@ -266,9 +265,9 @@ class EOAImageVisualizer:
         lat = ds.variables[latvar][:]
         projection = proj
 
-        checkFolder(self._output_folder)
+        create_folder(self._output_folder)
         for c_time in timesteps:
-            plt.subplots(1, len(var_names), squeeze=True, figsize=(8 * len(var_names), 8))
+            plt.subplots(1, len(var_names), squeeze=True, figsize=(self._figsize * len(var_names), self._figsize))
             for idx_var, c_var_name in enumerate(var_names):
                 cur_var = ds.variables.get(c_var_name)
                 ax = plt.subplot(1, len(var_names), idx_var + 1, projection=projection)
@@ -300,9 +299,9 @@ class EOAImageVisualizer:
         """
         This is the main function to plot multiple z_levels (no time) from netCDF files
         """
-        checkFolder(self._output_folder)
+        create_folder(self._output_folder)
         for c_slice in z_levels:
-                plt.subplots(1, len(var_names), squeeze=True, figsize=(8*len(var_names), 8))
+                plt.subplots(1, len(var_names), squeeze=True, figsize=(self._figsize*len(var_names), self._figsize))
                 for idx_var, c_var_name in enumerate(var_names):
                     cur_var = ds.variables.get(c_var_name)
                     ax = plt.subplot(1, len(var_names), idx_var+1)
@@ -317,53 +316,75 @@ class EOAImageVisualizer:
 
 
     def plot_3d_data_singlevar_np(self, data:list, z_levels: list, title='',
-                          file_name_prefix='', cmap='viridis', max_imgs_per_row=4):
+                          file_name_prefix='', cmap='viridis', max_imgs_per_row=4, flip_data=False):
         """
         Plot 3D data from numpy arrays
         """
-        checkFolder(self._output_folder)
-        plt.subplots(1, len(z_levels), squeeze=True, figsize=(8 * max_imgs_per_row, 8*int(np.ceil(len(z_levels)/max_imgs_per_row))))
+        create_folder(self._output_folder)
+        plt.subplots(1, len(z_levels), squeeze=True, figsize=(self._figsize * max_imgs_per_row, self._figsize*int(np.ceil(len(z_levels)/max_imgs_per_row))))
         for slice_idx, c_slice in enumerate(z_levels):
             # cur_img_row = np.floor(slice_idx/max_imgs_per_row) + 1
             # cur_img_col = slice_idx % max_imgs_per_row + 1
             ax = plt.subplot(1, len(z_levels), slice_idx+1)
-            plot_slice_eoa(data[c_slice,:,:], ax, cmap=cmap)
+            if flip_data:
+                plot_slice_eoa(np.flip(np.flip(data[c_slice,:,:]),axis=1), ax, cmap=cmap)
+            else:
+                plot_slice_eoa(data[c_slice, :, :], ax, cmap=cmap)
             c_title = F'{title} Z-level:{c_slice}'
             plt.title(c_title, fontsize=20)
 
         file_name = F'{file_name_prefix}_{c_slice:04d}'
-        # pylab.savefig(join(self._output_folder, F'{file_name}.png'), bbox_inches='tight')
+        pylab.savefig(join(self._output_folder, F'{file_name}.png'), bbox_inches='tight')
         self._close_figure()
 
 
-    def plot_3d_data_np(self, np_variables:list, var_names:list, z_levels: list, title='',
-                          file_name_prefix='', cmap='viridis'):
+    def plot_3d_data_np(self, np_variables:list, var_names:list, z_levels= [], title='',
+                          file_name_prefix='', cmap='viridis', z_lavels_names = [], flip_data=False,
+                        plot_mode=PlotMode.RASTER):
         """
         Plot multiple z_levels.
         """
-        checkFolder(self._output_folder)
+        create_folder(self._output_folder)
+
+        # If the user do not requires any z-leve, then all are plotted
+        if len(z_levels) == 0:
+            z_levels = range(np_variables[0].shape[0])
+
         for c_slice in z_levels:
-                plt.subplots(1, len(var_names), squeeze=True, figsize=(8*len(var_names), 8))
+                plt.subplots(1, len(var_names), squeeze=True, figsize=(self._figsize*len(var_names), self._figsize))
+
+                # Verify the index of the z_levels are the original ones.
+                if len(z_lavels_names) != 0:
+                    c_slice_txt = z_lavels_names[c_slice]
+                else:
+                    c_slice_txt = c_slice
+
                 for idx_var, c_var in enumerate(np_variables):
                     ax = plt.subplot(1, len(var_names), idx_var+1)
-                    plot_slice_eoa(c_var[c_slice,:,:], ax, cmap=cmap)
-                    if var_names != '':
-                        c_title = F'{var_names[idx_var]} {title} Z-level:{c_slice}'
+                    if flip_data:
+                        plot_slice_eoa(np.flip(np.flip(c_var[c_slice, :, :]),axis=1), ax, cmap=cmap, mode=plot_mode)
                     else:
-                        c_title = F'{idx_var} {title} Z-level:{c_slice}'
+                        plot_slice_eoa(c_var[c_slice,:,:], ax, cmap=cmap, mode=plot_mode)
+
+                    if var_names != '':
+                        c_title = F'{var_names[idx_var]} {title} Z-level:{c_slice_txt}'
+                    else:
+                        c_title = F'{idx_var} {title} Z-level:{c_slice_txt}'
+
                     plt.title(c_title, fontsize=20)
 
-                file_name = F'{file_name_prefix}_{c_slice:04d}'
+                file_name = F'{file_name_prefix}_{c_slice_txt:04d}'
                 pylab.savefig(join(self._output_folder, F'{file_name}.png'), bbox_inches='tight')
                 self._close_figure()
 
+    # ====================================== 1D Data =====================================
 
     def plot_1d_data_np(self, X, Ys,  title='', labels=[], file_name_prefix='', wide_ratio=1):
         """
 
         """
-        plt.figure(figsize=[16*wide_ratio, 8])
-        checkFolder(self._output_folder)
+        plt.figure(figsize=[16*wide_ratio, self._figsize])
+        create_folder(self._output_folder)
         for i, y in enumerate(Ys):
             if len(labels) > 0:
                 assert len(labels) == len(Ys)
@@ -379,3 +400,19 @@ class EOAImageVisualizer:
         file_name = F'{file_name_prefix}'
         pylab.savefig(join(self._output_folder, F'{file_name}.png'), bbox_inches='tight')
         self._close_figure()
+
+
+    def plot_1d_data_xarray(self, xr_ds, var_names: list, title='', file_name_prefix=''):
+        """
+        Plots multiple variables from a NetCDF file (1D data). It plots the results in a line
+        """
+        create_folder(self._output_folder)
+        for idx_var, c_var_name in enumerate(var_names):
+            xr_ds[c_var_name].to_dataframe().plot()
+            c_title = F'{c_var_name} {title}'
+            plt.title(c_title, fontsize=20)
+
+        file_name = F'{file_name_prefix}'
+        pylab.savefig(join(self._output_folder, F'{file_name}.png'), bbox_inches='tight')
+        self._close_figure()
+

@@ -40,7 +40,7 @@ class TimeSeriesVisualizer:
         """
         This is the main function to plot multiple slices.
         """
-        checkFolder(self._output_folder)
+        create_folder(self._output_folder)
 
         if x_axis == 'def':
             x = np.arange(len(df.loc[:,column_names[0]].values))

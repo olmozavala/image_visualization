@@ -53,7 +53,7 @@ class MaskRCNNVisualizer:
         """
         all_cases = listdir(self.input_folder)
         all_cases.sort()
-        checkFolder(self.output_folder)
+        create_folder(self.output_folder)
 
         for c_folder in all_cases:
             print(F'{join(self._output_folder, c_folder)}')
@@ -88,8 +88,8 @@ class MaskRCNNVisualizer:
                     final_img_folder = join(self._output_folder, c_folder_name, 'images')
                     final_masks_folder = join(self._output_folder, c_folder_name, 'masks')
                     img_final_name = join(final_img_folder, F'{c_folder_name}.png')
-                    checkFolder(final_img_folder)
-                    checkFolder(final_masks_folder)
+                    create_folder(final_img_folder)
+                    create_folder(final_masks_folder)
 
                     # Saving the imagme
                     imwrite(img_final_name, final_img_np)

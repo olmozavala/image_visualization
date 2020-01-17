@@ -1,19 +1,19 @@
 
 import matplotlib.pyplot as plt
 import pylab
-from img_viz.constants import SliceMode, PlaneTypes
+from img_viz.constants import SliceMode, PlaneTypes, PlotMode
 import numpy as np
 import os
 
 _COLORS = ['y', 'r', 'c', 'b', 'g', 'w', 'k', 'y', 'r', 'c', 'b', 'g', 'w', 'k']
 
 
-def checkFolder(output_folder):
+def create_folder(output_folder):
     """ It only creates a folder if it doesn't exist"""
     if not(os.path.exists(output_folder)):
         os.makedirs(output_folder)
 
-def plot_slice_eoa(c_img, ax, cmap='gray') -> None:
+def plot_slice_eoa(c_img, ax, cmap='gray', mode=PlotMode.RASTER) -> None:
     """
     Plots an simple 2D img for EOA data.
     :param c_img: 2D Image
@@ -22,7 +22,13 @@ def plot_slice_eoa(c_img, ax, cmap='gray') -> None:
     """
     c_ax = ax
     c_ax.axis('off')
-    c_ax.imshow(c_img, cmap=cmap)
+    if mode==PlotMode.RASTER:
+        c_ax.imshow(c_img, cmap=cmap)
+    if mode == PlotMode.CONTOUR:
+        c_ax.contour(c_img)
+    if mode == PlotMode.MERGED:
+        c_ax.imshow(c_img, cmap=cmap)
+        c_ax.contour(c_img, colors='r')
 
 def plot_slice(c_img, ctrs: list, ax, labels, cmap='gray') -> None:
     """
