@@ -22,13 +22,17 @@ def plot_slice_eoa(c_img, ax, cmap='gray', mode=PlotMode.RASTER) -> None:
     """
     c_ax = ax
     c_ax.axis('off')
-    if mode==PlotMode.RASTER:
-        c_ax.imshow(c_img, cmap=cmap)
+
+    if mode == PlotMode.RASTER:
+        im = c_ax.imshow(c_img, cmap=cmap)
     if mode == PlotMode.CONTOUR:
-        c_ax.contour(c_img)
+        im = c_ax.contour(c_img)
     if mode == PlotMode.MERGED:
-        c_ax.imshow(c_img, cmap=cmap)
+        im = c_ax.imshow(c_img, cmap=cmap)
         c_ax.contour(c_img, colors='r')
+
+    return im
+
 
 def plot_slice(c_img, ctrs: list, ax, labels, cmap='gray') -> None:
     """

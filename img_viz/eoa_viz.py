@@ -12,15 +12,17 @@ import cartopy
 
 class EOAImageVisualizer:
     """This class makes plenty of plots from netcdf datasets or numpy arrays """
-    _disp_images = True
-    _output_folder = 'output'
     _COLORS = ['y', 'r', 'c', 'b', 'g', 'w', 'k', 'y', 'r', 'c', 'b', 'g', 'w', 'k']
-    _figsize = 15
+    _figsize = 8
+    _font_size = 30
+    _fig_prop = 1.8  # Proportion of each figure w/h
+    _units = ''
+    _max_imgs_per_row = 4
 
     def __init__(self, **kwargs):
         # All the arguments that are passed to the constructor of the class MUST have its name on it.
-        self.disp_images = True
-        self.output_folder = 'output'
+        self._disp_images = True
+        self._output_folder = 'output'
         for arg_name, arg_value in kwargs.items():
             self.__dict__["_" + arg_name] = arg_value
 
@@ -32,9 +34,29 @@ class EOAImageVisualizer:
         '''Generic setter for all the properties of the class'''
         self.__dict__["_" + attr] = value
 
+    def add_colorbar(self, fig, im, ax, show_color_bar):
+        if show_color_bar:
+            font_size_cbar = self._font_size * .6
+            cbar = fig.colorbar(im, ax=ax)
+            cbar.ax.tick_params(labelsize=font_size_cbar)
+            cbar.set_label(self._units, fontsize=font_size_cbar*1.2)
+
+    def get_proper_size(self, rows, cols):
+        """
+        Obtains the proper size for a figure.
+        :param rows: how many rows will the figure have
+        :param cols: how many colswill the figure have
+        :param prop: Proportion is the proportion to use w/h
+        :return:
+        """
+        if rows == 1:
+            return self._figsize * cols * self._fig_prop, self._figsize
+        else:
+            return self._figsize * cols * self._fig_prop, self._figsize * rows
+
     def _close_figure(self):
         """Depending on what is disp_images, the figures are displayed or just closed"""
-        if self.disp_images:
+        if self._disp_images:
             plt.show()
         else:
             plt.close()
@@ -117,13 +139,10 @@ class EOAImageVisualizer:
         http://xarray.pydata.org/en/stable/plotting.html#maps
         """
         projection = proj
-        lon = ds[lonvar]
-        lat = ds[latvar]
-
         create_folder(self._output_folder)
         for c_slice in z_levels:
             for c_time in timesteps:
-                plt.subplots(1, len(var_names), squeeze=True, figsize=(self._figsize*len(var_names), self._figsize))
+                fig, axs = plt.subplots(1, len(var_names), squeeze=True, figsize=self.get_proper_size(1, len(var_names)))
                 for idx_var, c_var_name in enumerate(var_names):
                     # Depth selection, not sure if the name is always the same
                     c_depth = ds[z_levelvar].values[c_slice]
@@ -132,7 +151,7 @@ class EOAImageVisualizer:
                     ax = plt.subplot(1, len(var_names), idx_var+1, projection=projection)
                     # ------------------ MAP STUFF -------------------------
                     # https://rabernat.github.io/research_computing_2018/maps-with-cartopy.html
-                    cur_var.plot(ax=ax, transform=projection, cbar_kwargs={'shrink': 0.4})
+                    cur_var.plot(ax=ax, transform=projection)
                     # ax.stock_img()  # Draws a basic topography of the world
                     ax.coastlines(resolution='50m')  # Draws the coastline
                     # ax = self.add_states(ax)
@@ -141,17 +160,17 @@ class EOAImageVisualizer:
                     ax.add_feature(cartopy.feature.LAND, edgecolor='black')
                     ax.add_feature(cartopy.feature.LAKES, edgecolor='black')
                     ax.add_feature(cartopy.feature.RIVERS)
-                    ax.gridlines()
                     # ------------------ MAP STUFF -------------------------
                     c_title = F'{c_var_name} {title} Z-level:{c_slice} Time:{c_time} '
-                    plt.title(c_title, fontsize=20)
+                    ax.set_title(c_title, fontsize=self._font_size)
 
                 file_name = F'{file_name_prefix}_{c_slice:04d}'
                 pylab.savefig(join(self._output_folder, F'{file_name}.png'), bbox_inches='tight')
                 self._close_figure()
 
     def plot_4d_data_ncds_map(self, ds, var_names: list, z_levels: list, timesteps: list, title='',
-                          file_name_prefix='', cmap='viridis', proj=ccrs.PlateCarree(), lonvar='Longitude', latvar='Latitude'):
+                          file_name_prefix='', cmap='viridis', proj=ccrs.PlateCarree(),
+                              lonvar='Longitude', latvar='Latitude', show_color_bar=True):
         """
         Plots multiple z_levels from a NetCDF file (4D data). It plots the results in a map.
         """
@@ -162,7 +181,7 @@ class EOAImageVisualizer:
         create_folder(self._output_folder)
         for c_slice in z_levels:
             for c_time in timesteps:
-                plt.subplots(1, len(var_names), squeeze=True, figsize=(self._figsize*len(var_names), self._figsize))
+                fig, axs = plt.subplots(1, len(var_names), squeeze=True, figsize=self.get_proper_size(1, len(var_names)))
                 for idx_var, c_var_name in enumerate(var_names):
                     cur_var = ds.variables.get(c_var_name)
                     ax = plt.subplot(1, len(var_names), idx_var+1, projection=projection)
@@ -174,12 +193,12 @@ class EOAImageVisualizer:
                     ax.add_feature(cartopy.feature.LAND, edgecolor='black')
                     ax.add_feature(cartopy.feature.LAKES, edgecolor='black')
                     ax.add_feature(cartopy.feature.RIVERS)
-                    ax.gridlines()
                     # ------------------ MAP STUFF -------------------------
                     # plt.contourf(lon, lat, cur_var[c_time, c_slice, :, :])
-                    ax.imshow(cur_var[c_time, c_slice, :, :], extent=self.getExtent(lat, lon))
+                    im = ax.imshow(cur_var[c_time, c_slice, :, :], extent=self.getExtent(lat, lon))
                     c_title = F'{c_var_name} {title} Z-level:{c_slice} Time:{c_time} '
-                    plt.title(c_title, fontsize=20)
+                    ax.set_title(c_title, fontsize=self._font_size)
+                    self.add_colorbar(fig, im, ax, show_color_bar)
 
                 file_name = F'{file_name_prefix}_{c_slice:04d}'
                 pylab.savefig(join(self._output_folder, F'{file_name}.png'), bbox_inches='tight')
@@ -187,20 +206,21 @@ class EOAImageVisualizer:
                 self._close_figure()
 
     def plot_4d_data_ncds(self, ds, var_names: list, z_levels: list, timesteps: list, title='',
-                          file_name_prefix='', cmap='viridis'):
+                          file_name_prefix='', cmap='viridis', show_color_bar=True):
         """
         This is the main function to plot multiple z_levels from a NetCDF file (4D data)
         """
         create_folder(self._output_folder)
         for c_slice in z_levels:
             for c_time in timesteps:
-                plt.subplots(1, len(var_names), squeeze=True, figsize=(self._figsize*len(var_names), self._figsize))
+                fig, axs = plt.subplots(1, len(var_names), squeeze=True, figsize=self.get_proper_size(1, len(var_names)))
                 for idx_var, c_var_name in enumerate(var_names):
                     cur_var = ds.variables.get(c_var_name)
                     ax = plt.subplot(1, len(var_names), idx_var+1)
-                    plot_slice_eoa(cur_var[c_time, c_slice,:,:], ax, cmap=cmap)
+                    im = plot_slice_eoa(cur_var[c_time, c_slice,:,:], ax, cmap=cmap)
                     c_title = F'{c_var_name} {title} Z-level:{c_slice} Time:{c_time} '
-                    plt.title(c_title, fontsize=20)
+                    ax.set_title(c_title, fontsize=self._font_size)
+                    self.add_colorbar(fig, im, ax, show_color_bar)
 
                 file_name = F'{file_name_prefix}_{c_slice:04d}'
                 pylab.savefig(join(self._output_folder, F'{file_name}.png'), bbox_inches='tight')
@@ -219,7 +239,7 @@ class EOAImageVisualizer:
 
         create_folder(self._output_folder)
         for c_time_idx in timesteps:
-            plt.subplots(1, len(var_names), squeeze=True, figsize=(self._figsize*len(var_names), self._figsize))
+            plt.subplots(1, len(var_names), squeeze=True, figsize=self.get_proper_size(1, len(var_names)))
             for idx_var, c_var_name in enumerate(var_names):
                 print(c_var_name)
                 cur_var = xr_ds[c_var_name]
@@ -249,7 +269,7 @@ class EOAImageVisualizer:
                 ax.gridlines()
                 # ------------------ MAP STUFF -------------------------
                 c_title = F'{c_var_name} {title} Time:{c_time} '
-                plt.title(c_title, fontsize=20)
+                plt.title(c_title, fontsize=self._font_size)
 
             file_name = F'{file_name_prefix}_{c_time}'
             pylab.savefig(join(self._output_folder, F'{file_name}.png'), bbox_inches='tight')
@@ -267,7 +287,7 @@ class EOAImageVisualizer:
 
         create_folder(self._output_folder)
         for c_time in timesteps:
-            plt.subplots(1, len(var_names), squeeze=True, figsize=(self._figsize * len(var_names), self._figsize))
+            plt.subplots(1, len(var_names), squeeze=True, figsize=self.get_proper_size(1, len(var_names)))
             for idx_var, c_var_name in enumerate(var_names):
                 cur_var = ds.variables.get(c_var_name)
                 ax = plt.subplot(1, len(var_names), idx_var + 1, projection=projection)
@@ -286,7 +306,7 @@ class EOAImageVisualizer:
                 # plt.contourf(lon, lat, cur_var[c_time, c_slice, :, :])
                 ax.imshow(cur_var[c_time, :, :], extent=self.getExtent(lat, lon))
                 c_title = F'{c_var_name} {title} Time:{c_time} '
-                plt.title(c_title, fontsize=20)
+                plt.title(c_title, fontsize=self._font_size)
 
             file_name = F'{file_name_prefix}_{c_time:04d}'
             pylab.savefig(join(self._output_folder, F'{file_name}.png'), bbox_inches='tight')
@@ -301,13 +321,13 @@ class EOAImageVisualizer:
         """
         create_folder(self._output_folder)
         for c_slice in z_levels:
-                plt.subplots(1, len(var_names), squeeze=True, figsize=(self._figsize*len(var_names), self._figsize))
+                plt.subplots(1, len(var_names), squeeze=True, figsize=self.get_proper_size(1, len(var_names)))
                 for idx_var, c_var_name in enumerate(var_names):
                     cur_var = ds.variables.get(c_var_name)
                     ax = plt.subplot(1, len(var_names), idx_var+1)
                     plot_slice_eoa(cur_var[c_slice,:,:], ax, cmap=cmap)
                     c_title = F'{c_var_name} {title} Z-level:{c_slice}'
-                    plt.title(c_title, fontsize=20)
+                    plt.title(c_title, fontsize=self._font_size)
                 plt.title("TEST", fontsize=30)
 
                 file_name = F'{file_name_prefix}_{c_slice:04d}'
@@ -315,23 +335,30 @@ class EOAImageVisualizer:
                 self._close_figure()
 
 
-    def plot_3d_data_singlevar_np(self, data:list, z_levels: list, title='',
-                          file_name_prefix='', cmap='viridis', max_imgs_per_row=4, flip_data=False):
+    def plot_3d_data_singlevar_np(self, data:list, z_levels= [], title='',
+                          file_name_prefix='', cmap='viridis', flip_data=False,
+                                  show_color_bar=True):
         """
-        Plot 3D data from numpy arrays
+        Plots all the z-layers for a single 3d var
         """
         create_folder(self._output_folder)
-        plt.subplots(1, len(z_levels), squeeze=True, figsize=(self._figsize * max_imgs_per_row, self._figsize*int(np.ceil(len(z_levels)/max_imgs_per_row))))
+        rows = int(np.ceil(len(z_levels)/self._max_imgs_per_row))
+        cols = int(min(self._max_imgs_per_row, len(z_levels)))
+        if len(z_levels) == 0:
+            z_levels = np.arange(data.shape[0])
+
+        fig, axs = plt.subplots(rows, cols, squeeze=True,
+                                figsize=self.get_proper_size(rows, cols))
+
         for slice_idx, c_slice in enumerate(z_levels):
-            # cur_img_row = np.floor(slice_idx/max_imgs_per_row) + 1
-            # cur_img_col = slice_idx % max_imgs_per_row + 1
-            ax = plt.subplot(1, len(z_levels), slice_idx+1)
+            ax = plt.subplot(rows, cols, slice_idx+1)
             if flip_data:
-                plot_slice_eoa(np.flip(np.flip(data[c_slice,:,:]),axis=1), ax, cmap=cmap)
+                im = plot_slice_eoa(np.flip(np.flip(data[c_slice,:,:]),axis=1), ax, cmap=cmap)
             else:
-                plot_slice_eoa(data[c_slice, :, :], ax, cmap=cmap)
+                im = plot_slice_eoa(data[c_slice, :, :], ax, cmap=cmap)
             c_title = F'{title} Z-level:{c_slice}'
-            plt.title(c_title, fontsize=20)
+            ax.set_title(c_title, fontsize=self._font_size)
+            self.add_colorbar(fig, im, ax, show_color_bar)
 
         file_name = F'{file_name_prefix}_{c_slice:04d}'
         pylab.savefig(join(self._output_folder, F'{file_name}.png'), bbox_inches='tight')
@@ -351,7 +378,7 @@ class EOAImageVisualizer:
             z_levels = range(np_variables[0].shape[0])
 
         for c_slice in z_levels:
-                plt.subplots(1, len(var_names), squeeze=True, figsize=(self._figsize*len(var_names), self._figsize))
+                plt.subplots(1, len(var_names), squeeze=True, figsize=self.get_proper_size(1, len(var_names)))
 
                 # Verify the index of the z_levels are the original ones.
                 if len(z_lavels_names) != 0:
@@ -371,11 +398,47 @@ class EOAImageVisualizer:
                     else:
                         c_title = F'{idx_var} {title} Z-level:{c_slice_txt}'
 
-                    plt.title(c_title, fontsize=20)
+                    plt.title(c_title, fontsize=self._font_size)
 
                 file_name = F'{file_name_prefix}_{c_slice_txt:04d}'
                 pylab.savefig(join(self._output_folder, F'{file_name}.png'), bbox_inches='tight')
                 self._close_figure()
+
+    # ====================================== 2D Data =====================================
+    def plot_2d_data_np(self, np_variables: list, var_names: list, title='',
+                        file_name_prefix='', cmap='viridis', flip_data=False,
+                        plot_mode=PlotMode.RASTER, show_color_bar=True):
+        """
+        Plots an array of 2D fields that come as np arrays
+        :param np_variables:
+        :param var_names:
+        :param title:
+        :param file_name_prefix:
+        :param cmap:
+        :param flip_data:
+        :param plot_mode:
+        :return:
+        """
+        create_folder(self._output_folder)
+        fig, axs = plt.subplots(squeeze=True, figsize=self.get_proper_size(1, len(var_names)), ncols=len(var_names))
+
+        for idx_var, c_var in enumerate(np_variables):
+            ax = plt.subplot(1, len(var_names), idx_var+1)
+            if flip_data:
+                im =plot_slice_eoa(np.flip(np.flip(c_var),axis=1), ax, cmap=cmap, mode=plot_mode)
+            else:
+                im =plot_slice_eoa(c_var, ax, cmap=cmap, mode=plot_mode)
+            self.add_colorbar(fig, im, ax, show_color_bar)
+
+            if var_names != '':
+                c_title = F'{var_names[idx_var]} {title} '
+            else:
+                c_title = F'{idx_var} {title}'
+            ax.set_title(c_title, fontsize=self._font_size)
+
+        file_name = F'{file_name_prefix}'
+        pylab.savefig(join(self._output_folder, F'{file_name}.png'), bbox_inches='tight')
+        self._close_figure()
 
     # ====================================== 1D Data =====================================
 
@@ -395,7 +458,7 @@ class EOAImageVisualizer:
         if len(labels) > 0:
             plt.legend()
 
-        plt.title(title, fontsize=20)
+        plt.title(title, fontsize=self._font_size)
 
         file_name = F'{file_name_prefix}'
         pylab.savefig(join(self._output_folder, F'{file_name}.png'), bbox_inches='tight')
@@ -410,7 +473,7 @@ class EOAImageVisualizer:
         for idx_var, c_var_name in enumerate(var_names):
             xr_ds[c_var_name].to_dataframe().plot()
             c_title = F'{c_var_name} {title}'
-            plt.title(c_title, fontsize=20)
+            plt.title(c_title, fontsize=self._font_size)
 
         file_name = F'{file_name_prefix}'
         pylab.savefig(join(self._output_folder, F'{file_name}.png'), bbox_inches='tight')
